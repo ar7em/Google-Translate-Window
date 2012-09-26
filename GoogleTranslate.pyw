@@ -29,12 +29,13 @@ class Window(QtGui.QWidget):
         self.setWindowTitle("Google Translate")
         self.resize(800, 220)
 
-        # list of required and unrequired div names
+        # list of required divs names
+        self.required_items = ['#gt-form-c']
+        # exceptions for some child elements of required divs
         self.exception_items = ['#gt-ft',
                                 '#select-document',
                                 '#gt-res-tip',
-                                '#select_document']
-        self.required_items = ['#gt-form-c']
+                                '#select_document']        
 
         # open links in system's browser
         self.webView.page().mainFrame().page().setLinkDelegationPolicy(
@@ -59,6 +60,18 @@ class Window(QtGui.QWidget):
         self.quitAction = QtGui.QAction(QtGui.QIcon(":/close.png"),
                                         'Quit', self,
                                         triggered=QtGui.qApp.quit)
+        self.restoreAction = QtGui.QAction('Restore', self,
+                                        triggered=self.show)
+        self.minimizeAction = QtGui.QAction('Minimize', self,
+                                        triggered=self.hide) 
+        self.onTopAction = QtGui.QAction('Always on top', self,
+                                         toggled=self.swapAlwaysOnTop)
+        self.onTopAction.setCheckable(True)
+        self.onTopAction.setChecked(True)        
+        self.trayIconMenu.addAction(self.onTopAction)        
+        self.trayIconMenu.addAction(self.minimizeAction)
+        self.trayIconMenu.addAction(self.restoreAction)      
+        self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.quitAction)
 
         self.trayIcon = QtGui.QSystemTrayIcon(QtGui.QIcon(":/icon.png"), self)
@@ -66,12 +79,24 @@ class Window(QtGui.QWidget):
         self.trayIcon.activated.connect(self.iconActivated)
         self.trayIcon.show()
 
+    def swapAlwaysOnTop(self, alwaysOnTop):
+        visible = self.isVisible()
+        if alwaysOnTop:
+            self.setWindowFlags(self.windowFlags() |
+                               QtCore.Qt.Drawer |
+                               QtCore.Qt.WindowStaysOnTopHint)
+        else:
+            self.setWindowFlags(self.windowFlags() &
+                               ~QtCore.Qt.Drawer &
+                               ~QtCore.Qt.WindowStaysOnTopHint)
+        self.setVisible(visible)            
+
     def iconActivated(self, reason):
         if reason == QtGui.QSystemTrayIcon.Trigger:
             self.setVisible(not self.isVisible())
 
     def closeEvent(self, event):
-        '''on close window becomes hidden and can be restored via tray icon'''
+        #on close window becomes hidden and can be restored via tray icon'''
         if self.trayIcon.isVisible():
             self.hide()
             event.ignore()
@@ -92,6 +117,11 @@ class Window(QtGui.QWidget):
                     if not child in exception_elements:
                         required_elements.append(child)
         return required_elements
+
+    def setVisible(self, visible):
+        self.minimizeAction.setEnabled(visible)
+        self.restoreAction.setEnabled(not visible)
+        super(Window, self).setVisible(visible)
 
     def on_webView_linkClicked(self, url):
         #open link in external browser'''
