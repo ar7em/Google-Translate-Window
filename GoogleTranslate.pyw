@@ -94,7 +94,7 @@ class Window(QtGui.QWidget):
         return required_elements
 
     def on_webView_linkClicked(self, url):
-        '''open link in external browser'''
+        #open link in external browser'''
         QtGui.QDesktopServices.openUrl(url)
 
     def on_webView_loadFinished(self, ok):
